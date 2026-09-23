@@ -1,0 +1,50 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: api-gateway
+
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true
+          lower-case-service-id: true
+      routes:
+        - id: auth-service
+          uri: lb://auth-service
+          predicates:
+            - Path=/api/v1/auth/**
+          filters:
+              - StripPrefix=2
+
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+            allowedOrigins: "*"
+            allowedMethods: "*"
+            allowedHeaders: "*"
+
+
+eureka:
+  instance:
+    prefer-ip-address: false
+    # ip-address: localhost
+    # hostname: localhost
+    instance-id: ${spring.application.name}:${server.port}
+    # non-secure-port: ${server.port}
+    # instance-id: ${spring.application.name}-${spring.application.instance_id:${random.value}}
+
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    registry-fetch-interval-seconds: 5
+    initial-instance-info-replication-interval-seconds: 5
+    service-url:
+      defaultZone: http://discovery-server:8761/eureka/
+
+logging:
+  config: classpath:logback-spring.xml
+  level:
+    root: INFO

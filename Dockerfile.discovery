@@ -1,0 +1,22 @@
+# Stage 1: Build discovery-server
+FROM maven:3.9.6-eclipse-temurin-21 AS build
+
+WORKDIR /app
+
+# Copy entire multi-module project
+COPY . .
+
+# Build ONLY discovery-server module
+RUN mvn -pl discovery-server -am clean package -DskipTests
+
+# Stage 2: Runtime image
+FROM eclipse-temurin:21-jre
+
+WORKDIR /app
+
+# Copy the built JAR from the build stage
+COPY --from=build /app/discovery-server/target/discovery-server-1.0.0.jar app.jar
+
+EXPOSE 8761
+
+ENTRYPOINT ["java", "-jar", "app.jar"]

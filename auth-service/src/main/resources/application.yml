@@ -1,0 +1,103 @@
+server:
+  port: 9090
+
+spring:
+  application:
+    name: auth-service
+
+  r2dbc:
+    url:  ${SPRING_R2DBC_URL:r2dbc:mysql://mysql:3306/reactive_auth_db}
+    username: ${SPRING_R2DBC_USERNAME:root}
+    password: ${SPRING_R2DBC_PASSWORD:root}
+
+  sql:
+    init:
+      mode: never
+
+eureka:
+  instance:
+    prefer-ip-address: false
+    # ip-address: localhost
+    # hostname: localhost
+    instance-id: ${spring.application.name}:${server.port}
+    # non-secure-port: ${server.port}
+    # instance-id: ${spring.application.name}-${spring.application.instance_id:${random.value}}
+
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: http://discovery-server:8761/eureka/
+
+logging:
+  level:
+    root: INFO
+    org.springframework.web.reactive: DEBUG
+    org.springframework.security: DEBUG
+    com.reactiveevent.platform.auth: DEBUG
+  config: classpath:logback-spring.xml
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+jwt:
+  issuer: auth-service
+  access-token-expiry: 900        # 15 minutes
+  refresh-token-expiry: 604800    # 7 days
+  public-key: ${JWT_PUBLIC_KEY:/run/secrets/jwt_public_key}
+  private-key: ${JWT_PRIVATE_KEY:/run/secrets/jwt_private_key}
+
+# OAuth2 provider credentials
+# These are injected as environment variables in Docker / production.
+# For local development, set them in your IDE run configuration or .env file.
+# NEVER hardcode client secrets here.
+oauth2:
+  google:
+    client-id: ${GOOGLE_CLIENT_ID:change-me}
+    client-secret: ${GOOGLE_CLIENT_SECRET:change-me}
+    # The URL Google will redirect back to after the user approves
+    redirect-uri: ${GOOGLE_REDIRECT_URI:http://localhost:9090/auth/oauth2/google/callback}
+    # Google's token exchange endpoint
+    token-uri: https://oauth2.googleapis.com/token
+    # Google's user profile endpoint
+    userinfo-uri: https://www.googleapis.com/oauth2/v3/userinfo
+    # Google's OAuth2 authorization endpoint (for building the redirect URL)
+    auth-uri: https://accounts.google.com/o/oauth2/v2/auth
+    # Scopes we request — email and profile are the minimum needed
+    scope: openid email profile
+
+  github:
+    client-id: ${GITHUB_CLIENT_ID:change-me}
+    client-secret: ${GITHUB_CLIENT_SECRET:change-me}
+    redirect-uri: ${GITHUB_REDIRECT_URI:http://localhost:9090/auth/oauth2/github/callback}
+    token-uri: https://github.com/login/oauth/access_token
+    userinfo-uri: https://api.github.com/user
+    emails-uri: https://api.github.com/user/emails   # fallback if email is private
+    auth-uri: https://github.com/login/oauth/authorize
+    scope: read:user user:email
+
+security:
+  password:
+    encoder: bcrypt
+
+
+logstash:
+  host: logstash
+  port: 5000
+
+
+
+#  kafka:
+#    bootstrap-servers: kafka:9092
+#    consumer:
+#      group-id: elk-monolith-group
+#      auto-offset-reset: earliest
+#    producer:
+#      retries: 3
+#      acks: all

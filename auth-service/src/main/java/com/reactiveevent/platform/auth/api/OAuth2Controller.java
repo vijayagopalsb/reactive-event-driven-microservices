@@ -4,9 +4,11 @@ import com.reactiveevent.platform.common.api.auth.LoginResult;
 import com.reactiveevent.platform.common.api.auth.OAuthCallbackCommand;
 import com.reactiveevent.platform.common.application.auth.OAuthLoginUseCase;
 import com.reactiveevent.platform.common.domain.auth.AuthProvider;
+import com.reactiveevent.platform.auth.infrastructure.oauth.OAuthStateStore;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.ResponseCookie;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
 import reactor.core.publisher.Mono;
@@ -43,6 +45,7 @@ import reactor.core.publisher.Mono;
 public class OAuth2Controller {
 
     private final OAuthLoginUseCase oAuthLoginUseCase;
+    private final OAuthStateStore oAuthStateStore;
 
     // Google OAuth2 config
     @Value("${oauth2.google.auth-uri}")
@@ -70,6 +73,9 @@ public class OAuth2Controller {
     @Value("${oauth2.github.scope}")
     private String githubScope;
 
+    @Value("${oauth2.state.cookie-secure:true}")
+    private boolean stateCookieSecure;
+
     // -------------------------------------------------------------------------
     // GET /auth/oauth2/{provider}/url
     // Returns the authorization URL that the frontend should redirect the user to.
@@ -81,11 +87,6 @@ public class OAuth2Controller {
     // The frontend does: window.location.href = response.url
     // Then Google handles login and redirects back to your callback.
     //
-    // Note on state parameter:
-    //   In production, state should be a cryptographically random token stored
-    //   in the user's session to prevent CSRF.
-    //   Here we use a fixed "oauth2-state" for simplicity.
-    //   Phase improvement: generate random state + store in Redis/session.
     // -------------------------------------------------------------------------
     @GetMapping("/{provider}/url")
     public Mono<ResponseEntity<AuthUrlResponse>> getAuthorizationUrl(
@@ -93,35 +94,21 @@ public class OAuth2Controller {
 
         AuthProvider authProvider = parseProvider(provider);
 
-        String url = switch (authProvider) {
-            case GOOGLE -> UriComponentsBuilder
-                    .fromUriString(googleAuthUri)
-                    .queryParam("client_id",     googleClientId)
-                    .queryParam("redirect_uri",  googleRedirectUri)
-                    .queryParam("response_type", "code")
-                    .queryParam("scope",         googleScope)
-                    .queryParam("state",         "oauth2-state")
-                    // access_type=offline → Google also returns a refresh token
-                    .queryParam("access_type",   "offline")
-                    .build()
-                    .toUriString();
+        return oAuthStateStore.create(authProvider)
+                .map(state -> {
+                    String url = buildAuthorizationUrl(authProvider, state);
+                    ResponseCookie cookie = ResponseCookie.from(OAuthStateStore.COOKIE_NAME, state)
+                            .httpOnly(true)
+                            .secure(stateCookieSecure)
+                            .sameSite("Lax")
+                            .path("/auth/oauth2")
+                            .maxAge(OAuthStateStore.STATE_TTL)
+                            .build();
 
-            case GITHUB -> UriComponentsBuilder
-                    .fromUriString(githubAuthUri)
-                    .queryParam("client_id",    githubClientId)
-                    .queryParam("redirect_uri", githubRedirectUri)
-                    .queryParam("scope",        githubScope)
-                    .queryParam("state",        "oauth2-state")
-                    .build()
-                    .toUriString();
-
-            case LOCAL -> throw new IllegalArgumentException(
-                    "LOCAL provider does not have an OAuth2 authorization URL. "
-                    + "Use POST /auth/login instead."
-            );
-        };
-
-        return Mono.just(ResponseEntity.ok(new AuthUrlResponse(url)));
+                    return ResponseEntity.ok()
+                            .header("Set-Cookie", cookie.toString())
+                            .body(new AuthUrlResponse(url));
+                });
     }
 
     // -------------------------------------------------------------------------
@@ -140,14 +127,43 @@ public class OAuth2Controller {
     public Mono<ResponseEntity<LoginResult>> callback(
             @PathVariable String provider,
             @RequestParam String code,
-            @RequestParam(required = false, defaultValue = "oauth2-state") String state) {
+            @RequestParam String state,
+            @CookieValue(value = OAuthStateStore.COOKIE_NAME, required = false) String stateCookie) {
 
         AuthProvider authProvider = parseProvider(provider);
 
-        OAuthCallbackCommand command = new OAuthCallbackCommand(code, state, authProvider);
+        return oAuthStateStore.consume(state, stateCookie, authProvider)
+                .then(Mono.defer(() -> {
+                    OAuthCallbackCommand command = new OAuthCallbackCommand(code, state, authProvider);
+                    return oAuthLoginUseCase.login(command).map(ResponseEntity::ok);
+                }));
+    }
 
-        return oAuthLoginUseCase.login(command)
-                .map(ResponseEntity::ok);
+    private String buildAuthorizationUrl(AuthProvider provider, String state) {
+        return switch (provider) {
+            case GOOGLE -> UriComponentsBuilder
+                    .fromUriString(googleAuthUri)
+                    .queryParam("client_id", googleClientId)
+                    .queryParam("redirect_uri", googleRedirectUri)
+                    .queryParam("response_type", "code")
+                    .queryParam("scope", googleScope)
+                    .queryParam("state", state)
+                    .queryParam("access_type", "offline")
+                    .build()
+                    .toUriString();
+            case GITHUB -> UriComponentsBuilder
+                    .fromUriString(githubAuthUri)
+                    .queryParam("client_id", githubClientId)
+                    .queryParam("redirect_uri", githubRedirectUri)
+                    .queryParam("scope", githubScope)
+                    .queryParam("state", state)
+                    .build()
+                    .toUriString();
+            case LOCAL -> throw new IllegalArgumentException(
+                    "LOCAL provider does not have an OAuth2 authorization URL. "
+                            + "Use POST /auth/login instead."
+            );
+        };
     }
 
     // -------------------------------------------------------------------------

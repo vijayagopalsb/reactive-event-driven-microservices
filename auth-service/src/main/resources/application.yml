@@ -58,6 +58,10 @@ jwt:
 # For local development, set them in your IDE run configuration or .env file.
 # NEVER hardcode client secrets here.
 oauth2:
+  state:
+    # Keep true outside local HTTP development; the state cookie must never
+    # travel over an unencrypted connection in deployed environments.
+    cookie-secure: ${OAUTH2_STATE_COOKIE_SECURE:true}
   google:
     client-id: ${GOOGLE_CLIENT_ID:change-me}
     client-secret: ${GOOGLE_CLIENT_SECRET:change-me}

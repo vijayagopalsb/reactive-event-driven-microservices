@@ -48,3 +48,7 @@ logging:
   config: classpath:logback-spring.xml
   level:
     root: INFO
+
+jwt:
+  issuer: ${JWT_ISSUER:auth-service}
+  public-key: ${JWT_PUBLIC_KEY:/run/secrets/jwt_public_key}

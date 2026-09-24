@@ -39,17 +39,23 @@
             <artifactId>spring-boot-starter-webflux</artifactId>
         </dependency>
 
+        <!-- Reactive JWT validation at the gateway edge -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
+        </dependency>
+
         <!-- Actuator (Optional but recommended for health checks & monitoring) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
 
-        <!--<dependency>
+        <dependency>
             <groupId>com.reactiveevent.platform</groupId>
             <artifactId>platform-logging-starter</artifactId>
             <version>1.0.0</version>
-        </dependency>-->
+        </dependency>
 
 
 

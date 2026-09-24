@@ -40,11 +40,11 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
-       <!-- <dependency>
+        <dependency>
             <groupId>com.reactiveevent.platform</groupId>
             <artifactId>platform-logging-starter</artifactId>
             <version>1.0.0</version>
-        </dependency>-->
+        </dependency>
 
 
     </dependencies>

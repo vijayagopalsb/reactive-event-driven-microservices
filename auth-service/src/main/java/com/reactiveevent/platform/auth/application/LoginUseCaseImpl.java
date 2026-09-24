@@ -60,6 +60,7 @@ import java.util.List;
  *   Spring sees that constructor and injects the beans automatically.
  *   No @Autowired needed, no manual constructor needed.
  */
+
 @Service
 @RequiredArgsConstructor
 public class LoginUseCaseImpl implements LoginUseCase {

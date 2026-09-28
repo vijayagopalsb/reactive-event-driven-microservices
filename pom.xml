@@ -23,6 +23,7 @@
     <modules>
         <module>common-libraries</module>
         <module>auth-service</module>
+        <module>audit-service</module>
         <module>discovery-server</module>
         <module>api-gateway</module>
         <module>platform-logging-starter</module>

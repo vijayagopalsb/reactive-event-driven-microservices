@@ -5,6 +5,18 @@ spring:
   application:
     name: auth-service
 
+  kafka:
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:kafka:9092}
+    producer:
+      acks: all
+      retries: 3
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      properties:
+        "[delivery.timeout.ms]": 5000
+        "[request.timeout.ms]": 2000
+        "[max.block.ms]": 2000
+
   r2dbc:
     url:  ${SPRING_R2DBC_URL:r2dbc:mysql://mysql:3306/reactive_auth_db}
     username: ${SPRING_R2DBC_USERNAME:root}
@@ -91,17 +103,12 @@ security:
     encoder: bcrypt
 
 
+app:
+  kafka:
+    topics:
+      user-logged-in: ${APP_KAFKA_TOPICS_USER_LOGGED_IN:auth.login-succeeded.v1}
+      login-failed: ${APP_KAFKA_TOPICS_LOGIN_FAILED:auth.login-failed.v1}
+
 logstash:
   host: logstash
   port: 5000
-
-
-
-#  kafka:
-#    bootstrap-servers: kafka:9092
-#    consumer:
-#      group-id: elk-monolith-group
-#      auto-offset-reset: earliest
-#    producer:
-#      retries: 3
-#      acks: all

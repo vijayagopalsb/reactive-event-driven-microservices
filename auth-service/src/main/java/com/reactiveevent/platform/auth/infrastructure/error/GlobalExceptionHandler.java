@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.server.ServerWebInputException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -31,6 +32,16 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+    @ExceptionHandler(ServerWebInputException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidRequestBody(ServerWebInputException ex) {
+        log.warn("Invalid request body: {}", ex.getReason());
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(new ErrorResponse(
+                        "Invalid request body or field value. Supported providers: LOCAL, GOOGLE, GITHUB"
+                ));
+    }
 
     // -------------------------------------------------------------------------
     // IllegalArgumentException

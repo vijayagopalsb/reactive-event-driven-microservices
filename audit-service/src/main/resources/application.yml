@@ -1,0 +1,22 @@
+spring:
+  application:
+    name: audit-service
+  kafka:
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:kafka:9092}
+    consumer:
+      group-id: ${SPRING_KAFKA_CONSUMER_GROUP_ID:audit-service}
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+
+app:
+  kafka:
+    topics:
+      user-logged-in: ${APP_KAFKA_TOPICS_USER_LOGGED_IN:auth.login-succeeded.v1}
+      login-failed: ${APP_KAFKA_TOPICS_LOGIN_FAILED:auth.login-failed.v1}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

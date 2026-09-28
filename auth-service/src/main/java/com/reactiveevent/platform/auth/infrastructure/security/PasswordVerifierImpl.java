@@ -1,5 +1,6 @@
 package com.reactiveevent.platform.auth.infrastructure.security;
 
+import com.reactiveevent.platform.auth.application.error.InvalidCredentialsException;
 import com.reactiveevent.platform.auth.application.ports.PasswordVerifier;
 import com.reactiveevent.platform.common.domain.user.UserProvider;
 import lombok.RequiredArgsConstructor;
@@ -45,7 +46,7 @@ public class PasswordVerifierImpl implements PasswordVerifier {
             if (!userProvider.hasPassword()) {
                 log.warn("Password verification attempted on provider with no hash: {}",
                          userProvider.getProvider());
-                throw new IllegalArgumentException("Invalid credentials");
+                throw new InvalidCredentialsException();
             }
 
             boolean matches = passwordEncoder.matches(rawPassword, userProvider.getPasswordHash());
@@ -58,7 +59,7 @@ public class PasswordVerifierImpl implements PasswordVerifier {
             // Do NOT log the email or anything that identifies the user here.
             // If this log line is compromised, we don't want to leak user data.
             log.warn("Password verification failed for userId: {}", userProvider.getUserId());
-            throw new IllegalArgumentException("Invalid credentials");
+            throw new InvalidCredentialsException();
         });
     }
 }

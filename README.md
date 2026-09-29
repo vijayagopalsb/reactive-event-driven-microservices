@@ -15,10 +15,10 @@ together in a multi-module Java microservices system.
 The current business capability is identity and access management. The auth
 service supports local email/password authentication and Google/GitHub OAuth2
 login, issues JWT access and refresh tokens, and provides user and role
-management. A gateway validates JWTs and routes requests. Successful logins
-local successful logins and invalid-credential attempts are sent to Kafka for
-an audit service to consume. A local login still succeeds if publishing its
-success audit event fails.
+management. A gateway validates JWTs and routes requests. Successful local
+logins and invalid-credential attempts are sent to Kafka for an audit service
+to consume. A local login still succeeds if publishing its success audit
+event fails.
 
 The synchronous API flow and asynchronous event flow are intentionally
 separate:
@@ -107,6 +107,10 @@ dependencies from the concrete adapters currently implemented in the services.
 
 - [Auth service](auth-service/docs/README.md) — authentication and OAuth flows,
   user management, JWTs, persistence, and login-event integration.
+- [API gateway](api-gateway/docs/README.md) — reactive edge routing, service
+  discovery, and JWT validation.
+- [Discovery server](discovery-server/docs/README.md) — Eureka registry for
+  service registration and lookup.
 
 Documentation for the remaining services will be added in subsequent
 increments.

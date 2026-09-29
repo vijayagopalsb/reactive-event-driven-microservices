@@ -16,8 +16,9 @@ The current business capability is identity and access management. The auth
 service supports local email/password authentication and Google/GitHub OAuth2
 login, issues JWT access and refresh tokens, and provides user and role
 management. A gateway validates JWTs and routes requests. Successful logins
-and invalid-credential attempts are sent to Kafka for an audit service to
-consume. Login success continues even if publishing its audit event fails.
+local successful logins and invalid-credential attempts are sent to Kafka for
+an audit service to consume. A local login still succeeds if publishing its
+success audit event fails.
 
 The synchronous API flow and asynchronous event flow are intentionally
 separate:
@@ -101,7 +102,13 @@ follow the module-specific guides:
 
 The common-infrastructure guide distinguishes the module's declared framework
 dependencies from the concrete adapters currently implemented in the services.
-Service-level documentation will be added in subsequent documentation
+
+### Services
+
+- [Auth service](auth-service/docs/README.md) — authentication and OAuth flows,
+  user management, JWTs, persistence, and login-event integration.
+
+Documentation for the remaining services will be added in subsequent
 increments.
 
 ## Technology foundation
